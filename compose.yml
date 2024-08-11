@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    container_name: backend_fast_api
+    ports: 
+      - 8000:8000
+    env_file:
+      - backend/.env
+    depends_on: 
+      - db
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_fast_api
+    ports: 
+      - 5173:5173
+    env_file:
+      - frontend/.env
+    depends_on:
+      - backend
+  
+  db: 
+    image: postgres:13
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: changethis123
+      POSTGRES_DB: app
+    ports: 
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/postgres_data
+  
+  adminer: 
+    image: adminer
+    ports:
+      - 8080:8080
+  
+  nginx_proxy:
+    image: jc21/nginx-proxy-manager:2.10.4
+    container_name: nginx_proxy_manager
+    ports:
+      - 80:80
+      - 8090:81
+    volumes: 
+      - data:/data
+      - ./nginx/nginx.dev.conf:/data/nginx/custom/http_top.conf
+    depends_on:
+      - frontend
+      - backend
+      - db
+      - adminer
+
+volumes:
+  postgres_data:
+  data:
